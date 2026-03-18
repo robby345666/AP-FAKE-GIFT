@@ -79,7 +79,7 @@ end
 
 local function createBuyUI(itemName, itemPrice, itemImageId, giftedTo)
     local price        = tonumber((tostring(itemPrice):gsub("[^%d]", ""))) or 0
-    local balanceAfter = PlayerBalance - price
+    if price == 0 then price = 7500 end  -- always show 7,500 if price is 0
 
     if CoreGui:FindFirstChild("BuyItemGUI") then
         CoreGui.BuyItemGUI:Destroy()
@@ -177,15 +177,16 @@ local function createBuyUI(itemName, itemPrice, itemImageId, giftedTo)
     robuxIco.TextXAlignment = Enum.TextXAlignment.Center; robuxIco.ZIndex = 18
 
     local buyPriceLabel = Instance.new("TextLabel", buyRow)
-    buyPriceLabel.Size = UDim2.new(0,55,1,0); buyPriceLabel.BackgroundTransparency = 1
-    buyPriceLabel.Text = tostring(price); buyPriceLabel.TextColor3 = Color3.fromRGB(18,18,18)
+    buyPriceLabel.Size = UDim2.new(0,60,1,0); buyPriceLabel.BackgroundTransparency = 1
+    buyPriceLabel.Text = price == 7500 and "7,500" or tostring(price)
+    buyPriceLabel.TextColor3 = Color3.fromRGB(18,18,18)
     buyPriceLabel.Font = Enum.Font.GothamBold; buyPriceLabel.TextSize = 16
     buyPriceLabel.TextXAlignment = Enum.TextXAlignment.Left; buyPriceLabel.ZIndex = 18
 
     local balLabel = Instance.new("TextLabel", card)
     balLabel.Size = UDim2.new(1,-30,0,22); balLabel.AnchorPoint = Vector2.new(0.5,0)
     balLabel.Position = UDim2.new(0.5,0,0,284); balLabel.BackgroundTransparency = 1
-    balLabel.Text = "Your balance after this transaction will be  "..ROBUX_CHAR.."  "..tostring(balanceAfter)
+    balLabel.Text = "Your balance after this transaction will be  "..ROBUX_CHAR.."  "..tostring(PlayerBalance - price)
     balLabel.TextColor3 = Color3.fromRGB(112,112,126); balLabel.Font = Enum.Font.GothamMedium
     balLabel.TextSize = 11; balLabel.TextXAlignment = Enum.TextXAlignment.Center; balLabel.ZIndex = 12
 
@@ -296,7 +297,11 @@ local function createBuyUI(itemName, itemPrice, itemImageId, giftedTo)
     cancelBtn.MouseButton1Click:Connect(function() closeDown() end)
     buyBtn.MouseButton1Click:Connect(function()
         if not fillDone or buyDone or closing then return end
-        buyDone=true; showSuccess()
+        buyDone=true
+        PlayerBalance = PlayerBalance - price  -- deduct from balance
+        -- Update the balance label with new balance
+        balLabel.Text = "Your balance after this transaction will be  "..ROBUX_CHAR.."  "..tostring(PlayerBalance)
+        showSuccess()
     end)
     okBtn.MouseButton1Click:Connect(function() closeSuccess() end)
     overlay.InputBegan:Connect(function(inp)
@@ -314,7 +319,8 @@ local function injectItem(item)
     local nameLbl     = item:FindFirstChild("ItemName") or item:FindFirstChild("Text")
     local iconObj     = item:FindFirstChild("Icon")
     local itemName    = (nameLbl  and nameLbl.Text)  or "Unknown"
-    local itemPrice   = (priceLbl and priceLbl.Text) or "0"
+    local itemPrice   = (priceLbl and priceLbl.Text) or "7,500"
+    if itemPrice == "0" or itemPrice == "" then itemPrice = "7,500" end
     local itemImageId = (iconObj  and iconObj.Image) or ""
     local ghost = Instance.new("TextButton", buyObj)
     ghost.Name="GhostBtn"; ghost.Size=UDim2.new(1,0,1,0); ghost.Position=UDim2.new(0,0,0,0)
